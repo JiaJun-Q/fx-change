@@ -1,0 +1,15 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Java build outputs
+**/target/
+
+# Logs
+*.log
+
+# Local env files
+.env
+
+# Node dependencies
+**/node_modules/
