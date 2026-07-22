@@ -32,5 +32,15 @@ services:
       fx-db:
         condition: service_healthy
 
+  fx-monitor:
+    build: ./fx-monitor
+    image: fx-monitor:1.0
+    ports:
+      - "${MONITOR_PORT:-3000}:80"
+    environment:
+      API_HOST: fx-app-spring
+    depends_on:
+      - fx-app-spring
+
 volumes:
   fx-db-data:
