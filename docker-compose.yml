@@ -28,6 +28,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://fx-db:3306/${DB_NAME:-fxdb}
       SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-appuser}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-apppass}
+      FX_ORCHESTRATOR_URL: http://fx-orchestrator:8080
     depends_on:
       fx-db:
         condition: service_healthy
@@ -42,5 +43,41 @@ services:
     depends_on:
       - fx-app-spring
 
+  orchestrator-db:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: ${ORCH_DB_ROOT_PASSWORD:-rootpass}
+      MYSQL_DATABASE: ${ORCH_DB_NAME:-orchestratordb}
+      MYSQL_USER: ${ORCH_DB_USERNAME:-appuser}
+      MYSQL_PASSWORD: ${ORCH_DB_PASSWORD:-apppass}
+    ports:
+      - "${ORCH_DB_PORT:-3308}:3306"
+    volumes:
+      - orchestrator-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u$${MYSQL_USER} -p$${MYSQL_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  fx-orchestrator:
+    build: ./fx-orchestrator
+    image: fx-orchestrator:1.0
+    ports:
+      - "${ORCH_PORT:-8081}:8080"
+    environment:
+      DB_URL: jdbc:mysql://orchestrator-db:3306/${ORCH_DB_NAME:-orchestratordb}
+      DB_USERNAME: ${ORCH_DB_USERNAME:-appuser}
+      DB_PASSWORD: ${ORCH_DB_PASSWORD:-apppass}
+      FX_TARGET_URL: http://fx-app-spring:8080
+      FX_SELF_URL: http://fx-orchestrator:8080
+    depends_on:
+      orchestrator-db:
+        condition: service_healthy
+      fx-app-spring:
+        condition: service_started
+
 volumes:
   fx-db-data:
+  orchestrator-db-data:
